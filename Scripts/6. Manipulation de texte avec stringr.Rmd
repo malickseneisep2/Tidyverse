@@ -1,0 +1,293 @@
+---
+title: "Manipuler du texte avec stringr"
+author: "Malick SENE"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# 6. Manipuler du texte avec stringr
+
+```{r warning=FALSE, message = FALSE}
+library(tidyverse)
+library(tibble)
+library(stringr)
+library(tidyr)
+
+```
+
+
+Les fonctions de `forcats` vues précédemment permettent de modifier les modalités d’une variable qualitative **dans leur ensemble**.  
+Mais parfois, on a besoin de manipuler **le contenu même du texte** d’une variable de type chaîne de caractères :  
+**combiner, rechercher, remplacer**, etc.
+
+Pour cela, on va utiliser les fonctions de l’extension **`stringr`**.  
+Cette extension fait partie du **coeur du `tidyverse`**, elle est donc **automatiquement chargée** avec : library(tidyverse)
+
+```{r}
+d <- tibble(
+  nom = c("M. Mamadou Diop", "Mme Awa Ndiaye", "M. Ibrahima Sarr", "Mme Fatou Bâ"),
+  adresse = c("10 rue des Manguiers", "47 avenue Blaise Diagne", 
+              "12 rue du Souvenir Africain", "221 avenue Cheikh Anta Diop"),
+  ville = c("Dakar", "Thiès", "Kaolack", "Saint-Louis")
+)
+
+```
+
+## 6.1 Expressions régulières
+
+## Manipuler du texte avec `stringr` et les expressions régulières
+
+De nombreuses fonctions de l’extension `stringr` sont conçues pour travailler avec des **expressions régulières** (ou *regular expressions* en anglais).  
+Les expressions régulières forment un **mini-langage spécialisé** qui permet de **décrire des motifs dans du texte** de façon très précise.
+
+ Elles sont **très puissantes** pour effectuer des opérations telles que :
+
+- chercher un mot ou une suite de caractères,
+- détecter une structure particulière (comme un numéro de téléphone ou une adresse email),
+- extraire ou remplacer certaines parties d’un texte.
+
+---
+
+### À quoi servent les expressions régulières ?
+
+Voici quelques **exemples concrets** de ce que l’on peut faire avec des expressions régulières :
+
+| Objectif                                           | Expression régulière                  | Description rapide                              |
+|----------------------------------------------------|----------------------------------------|--------------------------------------------------|
+| Trouver un mot en fin de phrase                    | `\\w+$`                               | Le dernier mot d’une chaîne                     |
+| Détecter une majuscule en début de mot             | `\\b[A-Z]\\w*`                        | Mot commençant par une majuscule                |
+| Identifier des nombres à 3 ou 4 chiffres au début  | `^\\d{3,4}`                           | Nombre en début de chaîne (ex. 221, 2023...)    |
+| Détecter une adresse e-mail                        | `[\\w.+-]+@[\\w.-]+\\.[a-zA-Z]{2,}`   | Motif générique pour les emails                 |
+
+
+Exemple concret : Détection d’e-mail avec `str_detect()`
+
+Imaginons une base de données avec des commentaires ou des messages.  
+On souhaite **identifier les lignes contenant une adresse email**.
+
+```{r}
+texte <- tibble(
+  message = c(
+    "Contactez-nous à info@entreprise.sn",
+    "Pas d'adresse ici",
+    "Email secondaire : support.tech@domaine.org"
+  )
+)
+
+# Détection des adresses email
+texte %>%
+  mutate(contient_email = str_detect(message, "[\\w.+-]+@[\\w.-]+\\.[a-zA-Z]{2,}"))
+```
+
+## 6.2 Concaténer des chaînes
+
+La première opération de base consiste à **concaténer des chaînes de caractères entre elles**,  
+c’est-à-dire **les coller bout à bout** pour former une seule chaîne.  
+Cela se fait avec la fonction `paste()`.
+
+Imaginons qu’on veuille créer une colonne `adresse_complete` qui combine l’adresse et la ville, à partir du tableau `d`.
+
+```{r}
+paste(d$adresse, d$ville)
+```
+
+Par défaut, la fonction `paste()` **concatène les chaînes de caractères en insérant un espace** entre elles.  
+
+Si l’on souhaite utiliser un autre séparateur, il faut le **spécifier avec l’argument `sep`**.
+
+
+```{r}
+ paste(d$adresse, d$ville, sep = "- ")
+```
+
+Il existe une variante de la fonction `paste()` appelée **`paste0()`**,  
+qui **concatène les chaînes sans insérer de séparateur par défaut**
+
+```{r}
+paste0(d$adresse, d$ville)
+```
+
+À noter : `paste()` et `paste0()` sont des fonctions de **base R**.
+
+L’équivalent dans l’extension `stringr` (qui fait partie du tidyverse) s’appelle **`str_c()`** s'utulise de la même façon que **`paste()`**.
+
+
+Parfois, on peut ne pas chercher à concaténer les éléments d’un vecteur **avec ceux d’un autre vecteur**,  
+comme on l’a fait précédemment, mais plutôt à **coller tous les éléments d’un seul vecteur entre eux**.
+
+Dans ce cas, `paste()` **seul ne fera rien de particulier** : il collera les éléments **en parallèle**, élément par élément.
+```{r}
+paste(d$ville)
+```
+
+
+Pour concaténer les **éléments d’un vecteur entre eux**, il faut utiliser l’argument **`collapse`**.
+
+```{r}
+ paste(d$ville, collapse= ",")
+```
+ou alors :
+```{r}
+str_c(d$ville, collapse= ",")
+```
+
+## 6.3 Convertir en majuscules/minuscules
+
+Les fonctions `str_to_lower()`, `str_to_upper()` et `str_to_title()` du package `stringr` permettent de :
+
+- `str_to_lower()` : mettre **en minuscules** toutes les lettres,
+- `str_to_upper()` : mettre **en majuscules** toutes les lettres,
+- `str_to_title()` : **capitaliser** chaque mot (mettre une majuscule au début de chaque mot).
+
+```{r}
+ str_to_lower(d$nom)
+```
+
+```{r}
+str_to_upper(d$nom)
+```
+
+```{r}
+str_to_title(d$nom)
+```
+## 6.4 Découper des chaînes 
+
+La fonction `str_split()` permet de **“découper” une chaîne de caractères** en fonction d’un **délimiteur**.  
+On passe :
+
+- la **chaîne à découper** en premier argument,
+- le **délimiteur** (ou séparateur) en second.
+
+```{r}
+ str_split("un-deux-trois","-")
+```
+ On peut appliquer la fonction à un vecteur, dans ce cas le résultat sera une liste:
+ 
+```{r}
+str_split(d$nom, " ")
+```
+
+On peut aussi obtenir un **tableau (plus précisément une matrice)** si l’on ajoute l’argument `simplify = TRUE` à la fonction `str_split()`.
+
+```{r}
+str_split(d$nom, " ",simplify= TRUE)
+```
+Si l’on souhaite **créer de nouvelles colonnes** dans un tableau de données en **découpant une colonne de type texte**,  
+on peut utiliser la fonction `separate()` de l’extension **`tidyr`**.
+
+Cette fonction permet de **séparer une chaîne de caractères** en plusieurs variables, en **définissant un séparateur**.
+
+Voici un exemple d'utilisation :
+
+```{r}
+d%>%separate(nom,c("genre","prenom","nom"))
+```
+
+## 6.5 Extraire des sous-chaînes par position 
+
+La fonction `str_sub()` permet d’**extraire une sous-chaîne** dans une chaîne de caractères en indiquant les positions des premiers et derniers caractères.
+
+```{r}
+texte <- "Université Cheikh Anta Diop"
+
+# Extraire les 10 premiers caractères
+str_sub(texte, 1, 10)
+```
+## 6.6 Détecter des motifs 
+
+La fonction `str_detect()` permet de **détecter la présence d’un motif** (texte, mot, symbole...) parmi les éléments d’un vecteur.  
+Elle renvoie `TRUE` si le motif est trouvé, et `FALSE` sinon.
+
+Exemple : détecter si l’adresse contient le mot "rue"
+
+```{r}
+str_detect(d$adresse, "rue")
+```
+La fonction `str_detect()` renvoie un **vecteur de valeurs logiques** (`TRUE` ou `FALSE`)  
+et peut donc être utilisée, par exemple, avec le  `filter()` de `dplyr` pour **extraire des sous-populations**. Par exemple : 
+```{r}
+# Filtrer uniquement les lignes contenant "Libération"
+d %>% filter(str_detect(adresse, "rue"))
+```
+La fonction str_count() permet de compter le nombre d’occurrences d’un motif dans chaque élément d’un vecteur.
+
+```{r}
+str_count(d$adresse, "rue")
+```
+On peut aussi utiliser la fonction `str_subset()` pour **ne garder d’un vecteur que les éléments qui correspondent à un motif**.
+
+```{r}
+str_subset(d$adresse, "rue")
+```
+## 6.7 Extraire des motifs 
+
+La fonction `str_extract()` permet d’**extraire les valeurs qui correspondent à un motif donné**.
+
+Si l’on lui passe simplement une chaîne fixe (comme `"Dakar"`), cela aura **peu d’intérêt**,  
+car cela revient à détecter un mot exact.
+
+Mais l’intérêt de `str_extract()` se manifeste lorsqu’on l’utilise avec **des expressions régulières**,  
+car elle permet alors d’**extraire dynamiquement** des portions spécifiques d’une chaîne (comme un mot, un chiffre, un code, etc.).
+
+Par exemple récupérer le premier numéro de l'adresse.
+
+```{r}
+str_extract(d$adresse,"^\\d+")
+```
+La fonction `str_extract()` ne récupère **que la première occurrence** du motif spécifié.  
+Si l’on souhaite **extraire toutes les correspondances** d’un motif dans une chaîne, il faut utiliser la fonction `str_extract_all()`.
+
+## 6.8 Remplacer des motifs
+ 
+La fonction `str_replace()` permet de **remplacer une chaîne ou un motif spécifique** dans un texte  
+par une **autre valeur** (mot, expression, symbole, etc.).
+
+Par exemple, on peut remplace les occurrences de “Mr” par “M.” dans les noms de notre tableau :
+
+```{r}
+str_replace(d$nom, "Mr", "M.")
+```
+
+La fonction `str_replace_all()` est une variante de `str_replace()`  
+qui permet de **spécifier plusieurs remplacements à la fois** à l’aide d’une **liste**.
+
+```{r}
+str_replace_all(d$adresse, c("avenue"="Avenue",  "rue"="Rue"))
+```
+## 6.9 Modificateurs de motifs
+
+Par défaut, les motifs passés aux fonctions comme `str_detect()`, `str_extract()` ou `str_replace()`  
+sont interprétés comme des **expressions régulières**.
+
+Or certains caractères ont une **signification spéciale** en expression régulière :  
+par exemple, le point `.` signifie **"n’importe quel caractère"**,  
+et non un point littéral (comme dans une abréviation : "M.").
+
+```{r}
+str_count(d$nom, ".")
+```
+Il faut donc **spécifier que notre point est bien un caractère littéral** (et non un symbole d'expression régulière)  
+en l'entourant de la fonction `fixed()`.
+
+```{r}
+str_count(d$nom, fixed("."))
+```
+On peut également modifier le **comportement des expressions régulières** en utilisant la fonction `regex()`.  
+Cela permet, par exemple, de rendre une recherche **insensible à la casse** (majuscule/minuscule)  
+grâce à l’argument `ignore_case = TRUE`.
+
+```{r}
+str_detect(d$nom, "mme")
+```
+
+```{r}
+str_detect(d$nom, regex("mme", ignore_case = TRUE))
+```
+
+
+
+
+
+

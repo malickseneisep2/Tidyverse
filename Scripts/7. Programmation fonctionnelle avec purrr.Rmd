@@ -1,0 +1,214 @@
+---
+title: "7. Programmation fonctionnelle avec purrr"
+author: "Malick SENE"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r message = FALSE , warning= FALSE}
+library(purrr)
+library(haven)
+library(tidyverse)
+library(tidyr)
+wf <- read_dta("ehcvm_welfare_sen2021.dta")
+```
+
+
+
+# 7. Programmation fonctionnelle avec purrr :
+
+La programmation fonctionnelle vise à traiter les données de manière concise et expressive en appliquant des fonctions à des objets (vecteurs, listes, data frames) sans recourir à des boucles explicites. Le package **purrr** (faisant partie du tidyverse) fournit une suite de fonctions pour itérer sur vos données. Ci-dessous, nous passons en revue les principales fonctions et leurs applications.
+
+## 7.1 map()
+
+La fonction `map()` permet d'appliquer une fonction à chaque élément d'une liste ou d'un vecteur et retourne une liste des résultats.
+Par exemple, on peut afficher la classe de chaque colonne dans wf (data frame). Pour cela, on passe en parametre à la fonction le dataframe ainsi que la fonction appliquée.
+
+```{r}
+# Afficher les classes des différentes colonnes
+classes <- map(wf, class)
+classes
+```
+
+## 7.2 map_dbl()
+
+map_dbl() est similaire à map(), mais il force le résultat à être un vecteur numérique (double).
+On l'utilise par exemple pour calculer rapidement une statistique sur chacune des colonnes numériques.
+
+Exemple : Calculer la moyenne de toutes les colonnes numériques (en ignorant les NA)
+
+```{r}
+# Sélectionner les colonnes numériques de wf
+numeric_cols <- wf %>% select(where(is.numeric))
+# Calculer la moyenne de chaque colonne numérique
+moyennes <- map_dbl(numeric_cols, mean, na.rm = TRUE)
+moyennes
+```
+
+## 7.3 map_dfr()
+
+`map_dfr()` applique une fonction à chaque élément d’une liste (ou d’un vecteur) puis combine (bind) les résultats par ligne pour renvoyer un data frame.  
+Le suffixe **_dfr** signifie "data frame, row-wise".
+
+**Principaux paramètres :**
+
+- **.x** : La liste (ou le vecteur) sur lequel la fonction est appliquée.
+- **.f** : La fonction qui doit retourner un data frame ou un tibble pour chaque élément.
+- **.id** (optionnel) : Un nom de colonne qui contiendra les noms (ou indices) d'origine de 
+**Exemple : Résumer chaque colonne numérique avec quelques statistiques**
+
+Dans cet exemple, nous allons appliquer une fonction qui calcule la moyenne, le minimum et le maximum pour chaque colonne numérique.  
+Chaque colonne est résumé(e) par un petit tibble, puis `map_dfr()` combine ces tibbles en un data frame unique avec une colonne d'identifiant.
+
+
+```{r}
+summary_stats <- map_dfr(numeric_cols, function(x) {
+  tibble(
+    mean = mean(x, na.rm = TRUE),
+    min = min(x, na.rm = TRUE),
+    max = max(x, na.rm = TRUE)
+  )
+}, .id = "variable")
+summary_stats
+```
+
+## 7.4 map2()
+
+La fonction `map2()` permet d’itérer **simultanément sur deux vecteurs ou listes** et d’appliquer une fonction à chaque paire d’éléments.  
+Elle renvoie une **liste** (ou un vecteur si vous utilisez une variante comme `map2_dbl()` ou `map2_chr()`) contenant les résultats de l’application de la fonction à chaque couple d’éléments.
+
+**Principaux paramètres :**
+
+- **.x** et **.y** : Les deux vecteurs ou listes sur lesquels itérer en parallèle.  
+  Par exemple, si vous voulez itérer sur deux colonnes d’un data frame.
+  
+- **.f** : La fonction à appliquer à chaque paire d’éléments (.x\[i\] et .y\[i\]).  
+  Cette fonction doit accepter deux arguments (ou plus, en combinant avec `...`).
+  
+
+Exemple : Calcul d’un produit pondéré
+
+Dans la base de données `wf` (EHCVM),nous disposons de deux colonnes :  
+- `hhsize` : représentant la taille du ménage,  
+- `hhweight` : représentant la pondération du ménage.
+
+On souhaite calculer pour chaque ménage le **produit de la taille et de la pondération** (par exemple, pour créer une mesure pondérée).
+
+```{r}
+weighted_values <- map2_dbl(wf$hhsize, wf$hhweight, function(size, weight) {
+  size * weight
+})
+# Affichage des quelques premiers résultats
+head(weighted_values)
+```
+
+## 7.5 pmap()
+
+La fonction `pmap()` est la **généralisation de `map()` pour plus de deux arguments**.  
+Elle prend en entrée une liste de vecteurs (tous de même longueur) et applique une fonction aux éléments correspondants de chacun de ces vecteurs.
+
+**Principaux paramètres :**
+
+- **.l** : Une liste dont chaque élément est un vecteur.  
+  *Tous les vecteurs doivent avoir la même longueur*.
+- **.f** : La fonction à appliquer aux éléments correspondants.  
+  Cette fonction doit accepter autant d'arguments que de vecteurs dans la liste.
+
+Exemple : Calculer un score combiné à partir de plusieurs colonnes dans la base `wf`
+
+Dans EHCVM, on dispose de trois colonnes :
+- `hhsize` : la taille du ménage,
+- `pcexp` : l’indicateur de bien-être par tête,
+- `hage` : l’âge du chef de ménage.
+
+On souhaite créer une nouvelle variable `score` qui combine ces informations. Par exemple, on peut définir un score qui divise l’indicateur de bien-être par la taille du ménage et qui applique un coefficient multiplicateur si l’âge du chef de ménage est supérieur à 50 ans.
+
+```{r}
+# Calculer le score avec pmap_dbl() pour obtenir un vecteur numérique
+score <- pmap_dbl(
+  list(wf$hhsize, wf$pcexp, wf$hage),
+  function(size, pcexp, age) {
+    # Si le chef du ménage a plus de 50 ans, augmenter légèrement le score
+    pcexp / size * ifelse(age > 50, 1.1, 1)
+  }
+)
+
+# Affichage des premiers scores calculés
+head(score)
+```
+
+## 7.6 imap()
+
+La fonction `imap()` fonctionne comme `map()`, mais en plus de traiter chaque élément d’un vecteur ou d’une liste,  
+elle fournit également l’indice ou le nom correspondant à chaque élément.  
+Cela est particulièrement utile lorsqu’on souhaite connaître la **position** ou l’**étiquette** associée à chaque élément lors de l’itération.
+
+**Principaux paramètres :**
+
+- **.x** : Le vecteur ou la liste sur lequel on itère.
+- **.f** : La fonction à appliquer. Cette fonction reçoit généralement deux arguments :  
+  - Le premier correspondant à l’**élément** (la valeur)  
+  - Le deuxième à son **indice** (ou son nom).
+  
+Exemple : Afficher pour chaque colonne numérique son nom et sa moyenne
+
+Dans cet exemple, nous allons extraire les colonnes numériques de notre data frame `wf` (issu de l’EHCVM) et utiliser `imap()`  
+pour créer un vecteur de chaînes de caractères indiquant pour chaque colonne son nom et sa moyenne.
+
+```{r}
+# Sélectionner les colonnes numériques de wf
+numeric_cols <- wf %>% select(where(is.numeric))
+# Utiliser imap() pour créer un vecteur avec le nom de la colonne et sa moyenne
+stats <- imap_chr(numeric_cols, function(column, name) {
+  # Calcul de la moyenne en ignorant les valeurs manquantes
+  mean_val <- mean(column, na.rm = TRUE)
+  paste0(name, " : moyenne = ", round(mean_val, 2))
+})
+
+# Afficher le résultat
+stats
+```
+
+## 7.7 keep() et discard()
+
+Les fonctions `keep()` et `discard()` du package **purrr** permettent de filtrer les éléments d’un vecteur ou d’une liste en fonction d’un prédicat (une fonction logique).
+
+- **`keep()`** conserve les éléments pour lesquels le prédicat renvoie `TRUE`.
+- **`discard()`** élimine (rejette) les éléments pour lesquels le prédicat renvoie `TRUE`.
+
+**Principaux paramètres :**
+
+- **.x** : Le vecteur ou la liste à filtrer.
+- **.predicate** : Une fonction logique qui sera appliquée à chaque élément de `.x`.  
+  Si pour un élément donné, `.predicate` retourne `TRUE`, alors :
+  - avec `keep()`, l’élément est conservé,
+  - avec `discard()`, l’élément est éliminé.
+
+Exemple : Sélectionner les colonnes en fonction du taux de valeurs non manquantes
+
+Nous souhaitons conserver uniquement les colonnes où **le ratio de valeurs non manquantes est d’au moins 70 %**.
+
+```{r}
+# Définir le seuil minimal de valeurs non manquantes (ici 70%)
+seuil <- 0.7
+
+# Utilisation de keep() pour ne conserver que les colonnes qui respectent ce critère
+colonnes_pertinentes <- keep(wf, function(x) {
+  taux_non_na <- mean(!is.na(x))
+  taux_non_na >= seuil
+})
+
+# Afficher les noms des colonnes retenues
+names(colonnes_pertinentes)
+```
+
+
+
+
+
+
+
+
+
