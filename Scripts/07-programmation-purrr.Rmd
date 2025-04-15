@@ -1,11 +1,5 @@
----
-title: "7. Programmation fonctionnelle avec purrr"
-author: "Malick SENE"
-date: "`r Sys.Date()`"
-output:
-  pdf_document: default
-  html_document: default
----
+# Chapitre 7 : Programmation fonctionnelle avec purrr
+
 
 ```{r message = FALSE , warning= FALSE}
 library(purrr)
@@ -15,9 +9,6 @@ library(tidyr)
 wf <- read_dta("ehcvm_welfare_sen2021.dta")
 ```
 
-
-
-# 7. Programmation fonctionnelle avec purrr :
 
 La programmation fonctionnelle vise à traiter les données de manière concise et expressive en appliquant des fonctions à des objets (vecteurs, listes, data frames) sans recourir à des boucles explicites. Le package **purrr** (faisant partie du tidyverse) fournit une suite de fonctions pour itérer sur vos données. Ci-dessous, nous passons en revue les principales fonctions et leurs applications.
 

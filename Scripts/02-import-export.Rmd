@@ -1,16 +1,4 @@
----
-title: "Importation et exportation des données"
-author: "Malick SENE"
-date: "`r Sys.Date()`"
-output:
-  pdf_document: default
-  html_document: default
-editor_options:
-  markdown:
-    wrap: sentence
----
-
-# 2. Importation et exportation des données
+# Chapitre 2 : Importation et exportation des données
 
 Les données peuvent provenir de sources diverses et se présenter sous forme brute, comme des fichiers texte, des feuilles Excel,des fichiers stata, spss ou encore des bases de données distantes...
 Le **tidyverse**, à travers ses packages spécialisés, met à disposition des outils pour importer différents types de fichiers.

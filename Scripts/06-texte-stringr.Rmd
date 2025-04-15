@@ -1,13 +1,4 @@
----
-title: "Manipuler du texte avec stringr"
-author: "Malick SENE"
-date: "`r Sys.Date()`"
-output:
-  pdf_document: default
-  html_document: default
----
-
-# 6. Manipuler du texte avec stringr
+# Chapitre 6 : Manipuler du texte avec stringr
 
 ```{r warning=FALSE, message = FALSE}
 library(tidyverse)

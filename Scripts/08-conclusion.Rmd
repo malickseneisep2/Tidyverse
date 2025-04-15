@@ -1,0 +1,7 @@
+# Chapitre 9 : Conclusion
+
+Ce guide a proposé un parcours progressif à travers les outils fondamentaux du tidyverse, permettant de couvrir les principales étapes d’un travail de données en R : importation, transformation, visualisation, manipulation de texte et programmation fonctionnelle.
+
+Au-delà des fonctions elles-mêmes, c’est une **approche méthodique et fluide** de l’analyse de données qui a été mise en avant. Le tidyverse ne se contente pas d’offrir des outils : il propose une **grammaire cohérente** qui favorise la lisibilité, la reproductibilité et l’efficacité du code.
+
+Grâce à des cas pratiques basés sur les données de l’EHCVM, ce document a permis d’illustrer comment ces outils s’intègrent dans des analyses concrètes, avec une syntaxe expressive.

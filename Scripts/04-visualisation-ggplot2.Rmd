@@ -1,11 +1,5 @@
----
-title: "Visualisation avec ggplot2"
-author: "Malick SENE"
-date: "`r Sys.Date()`"
-output:
-  pdf_document: default
-  html_document: default
----
+# Chapitre 4 : Visualisation avec ggplot2 
+
 
 ```{r message = FALSE, warning= FALSE}
 library(ggplot2)
@@ -13,15 +7,12 @@ library(haven)
 wf <- read_dta("ehcvm_welfare_sen2021.dta")
 
 ```
-```{r}
+```{r warning = FALSE, message= FALSE}
 library(tidyverse)
 wf <- wf %>%
   mutate(across(where(~ is.character(.) || haven::is.labelled(.)), as_factor))
 ```
 
-
-
-# 4. Visualisation avec ggplot2 
 
 La visualisation des données est une étape essentielle dans l’analyse statistique. Elle permet non seulement d’explorer les données de manière intuitive, mais aussi de communiquer efficacement les résultats. Le package ggplot2, composant clé du tidyverse, offre un cadre puissant, cohérent et extensible pour créer des graphiques en R. Fondé sur la "Grammaire des graphiques" (The Grammar of Graphics), ggplot2 repose sur une logique de couches successives où chaque élément graphique (les points, les lignes, les axes, les couleurs, etc.) peut être construit indépendamment puis combiné harmonieusement.
 
@@ -143,6 +134,24 @@ Elle combine les avantages du **boxplot** et d’un **graphique de densité**, o
 ggplot(wf) + geom_violin(aes(x = hgender, y = pcexp))
 ```
 
+Nota Bene : Deux manières d’utiliser `aes()` dans `ggplot2`
+
+Dans `ggplot2`,il existe **deux façons principales** d’intégrer `aes()` dans un graphique, qui ont chacune leurs spécificités :
+
+
+1. `aes()` dans `ggplot()`
+
+Lorsque `aes()` est placé dans `ggplot()`, les mappages sont **définis une seule fois** et sont **appliqués globalement à toutes les couches** (geom_point, geom_line, geom_bar, etc.),  
+à condition que ces couches n’aient pas leurs propres mappages.
+
+**Avantage :** permet d’écrire un code plus concis et plus lisible lorsque toutes les couches utilisent les **mêmes variables**.
+
+2. `aes()` dans les `geom_*()`
+
+Lorsque `aes()` est placé **directement dans une fonction `geom_*()`**, les mappages sont **spécifiques à cette couche uniquement**.  
+Cela permet de **personnaliser chaque couche indépendamment**, en utilisant différentes variables ou esthétiques selon les cas.
+
+**Avantage :** plus de flexibilité si on veut superposer plusieurs types de graphiques avec des variables différentes.
 
 ### 4.2.3 geom_bar
 
@@ -154,6 +163,29 @@ ggplot(data = wf ) +
   geom_bar(aes(x = hgender))
 ```
 
+Les **diagrammes circulaires** sont utiles pour représenter la **répartition d’une variable catégorielle** en pourcentage.  
+Bien que `ggplot2` ne propose pas directement une fonction `geom_pie()`, on peut les créer facilement en combinant :
+
+- un `geom_bar()`,
+- une transformation en coordonnées **polaires** avec `coord_polar()`.
+
+```{r}
+# Préparation des données : on compte le nombre d'observations par modalité de la variable 'milieu'
+milieu_df <- wf_sample %>%
+  filter(!is.na(milieu)) %>%  # On retire les éventuels NA
+  count(milieu)               # On compte le nombre de ménages par milieu (Urbain / Rural)
+
+# Créer le diagramme circulaire de base
+ggplot(milieu_df, aes(x = "", y = n, fill = milieu)) +
+  geom_bar(stat = "identity", width = 1) +   # Création d’un barplot unique
+  coord_polar(theta = "y") +                 # Transformation en camembert
+  labs(
+    title = "Répartition des ménages selon le milieu de résidence",
+    fill = "Milieu"
+  ) +
+  # 6. Suppression des axes et du fond pour un rendu plus propre
+  theme_void()
+```
 
 ### 4.2.4 geom_text
 
@@ -369,6 +401,34 @@ ggplot(wf, aes(x = region, fill = hgender)) +
   
 ```
 
+Nota Bene : La fonction `labs()` dans `ggplot2`
+
+La fonction `labs()` (*labels*) permet de **personnaliser les textes affichés** dans un graphique `ggplot2` :  
+titre principal, titres des axes, légendes, sous-titres, annotations, etc.
+
+Elle améliore la **lisibilité** du graphique et le rend plus **explicite** pour le lecteur.
+
+
+
+Principaux paramètres de `labs()` :
+
+| Paramètre       | Rôle                                                             |
+|------------------|------------------------------------------------------------------|
+| `title`          | Titre principal du graphique                                     |
+| `subtitle`       | Sous-titre du graphique                                          |
+| `caption`        | Texte en bas du graphique (souvent pour les sources)            |
+| `x`              | Titre de l’axe des abscisses (horizontal)                       |
+| `y`              | Titre de l’axe des ordonnées (vertical)                         |
+| `fill`, `color`  | Titre associé à la légende pour les couleurs ou les remplissages |
+| `size`, `shape`  | Titre associé aux autres esthétiques                            |
+
+
+Quand utiliser `labs()` ?
+
+- Pour **renommer clairement les axes** (`x`, `y`) afin d’éviter les noms bruts issus des variables.
+- Pour **ajouter un titre lisible** au graphique (`title`, `subtitle`).
+- Pour **rendre les légendes plus compréhensibles** (`color`, `fill`, etc.).
+- Pour **documenter l’origine des données** avec `caption`.
 
 ## 4.4 Représentation de plusieurs geom
 
@@ -478,17 +538,25 @@ Un des intérêts du **faceting** dans `ggplot2` est que **tous les graphiques g
 
 ## 4.6 Scales : Personnaliser les axes, couleurs et tailles
 
-Les échelles (scales) permettent de contrôler la manière dont les données sont traduites en éléments visuels dans ggplot2 : taille, couleur, position, forme, etc. Elles rendent les graphes plus lisibles, cohérents et adaptés aux objectifs d’analyse.
+Avec `ggplot2`, on définit des **mappages esthétiques** entre des **attributs graphiques**  
+(position, taille, couleur, forme, etc.) et des **variables** issues d’un tableau de données.  
+Ces mappages sont définis pour chaque `geom`, via la fonction `aes()`.
+Les **scales** permettent de **modifier la manière dont un attribut graphique est relié aux valeurs d’une variable**, et donc comment cela est affiché visuellement et interprété.
 
-### 4.6.1 scale_size() – Ajuster la taille selon une variable
+Par exemple :
 
-L’esthétique size dans ggplot2 permet de représenter une troisième variable continue en modifiant la taille des points d’un graphique. Cela permet d’ajouter une couche d’information supplémentaire dans une visualisation en deux dimensions.
+Pour l’attribut `color`, on peut définir la **palette de couleurs** utilisée.
+Pour `size`, on peut fixer les **tailles minimales et maximales**.
+Pour `x` ou `y`, on peut **limiter l’échelle des axes**, changer les **graduations**, etc.
 
-On utilise souvent scale_size() pour :
+Pour modifier une échelle existante, on ajoute un élément à l’objet `ggplot2` avec l’opérateur `+`.
 
-Mieux contrôler l’échelle visuelle (plage de taille) des points ;
+### 4.6.1 scale_size()
 
-Adapter l’interprétation à la portée des données (petits points pour les faibles valeurs, gros points pour les fortes valeurs).
+Si l’on souhaite **modifier les tailles minimales et maximales** des objets graphiques (comme les points dans un `geom_point()`),  
+on utilise la fonction `scale_size()` ou sa variante `scale_size_continuous()`.
+
+Ces fonctions permettent de **contrôler la plage visuelle** utilisée pour représenter une variable continue avec l’esthétique `size`.
 
 Exemple : 
 ```{r}
@@ -498,17 +566,31 @@ ggplot(wf_sample, aes(x = dtot, y = pcexp, size = hhsize)) +
   labs(
     title = "Bien-être vs Dépenses totales, taille selon la taille du ménage",
     x = "Dépenses totales du ménage (dtot)",
-    y = "Bien-être (pcexp)",
-    size = "Taille du ménage"
+    y = "Bien-être (pcexp)"
   )
-
 ```
  
 
+On peut ajouter d’autres paramètres à scale_size. Le premier argument est toujours le titre donné à la légende :
 
- 
+
+```{r}
+ggplot(wf_sample, aes(x = dtot, y = pcexp, size = hhsize)) +
+  geom_point(alpha = 0.6, color = "darkblue") +
+  scale_size("Taille du ménage",range = c(1, 7)) 
+```
+
+
+On peut aussi définir manuellement les éléments de légende représentés :
+
+```{r}
+ggplot(wf_sample, aes(x = dtot, y = pcexp, size = hhsize)) +
+  geom_point(alpha = 0.6, color = "darkblue") +
+  scale_size("Taille du ménage",range = c(1, 7), breaks = c(5,10,15,20)) 
+```
+
+
 ### 4.6.2 scale_x_*() et scale_y_*() – Personnaliser les axes
-
 
 **Pourquoi personnaliser les axes ?**
 
@@ -522,8 +604,9 @@ Quand on crée un graphique avec ggplot2, les axes sont générés automatiqueme
 
 C’est là qu’interviennent les fonctions scale_x_*() et scale_y_*().
 
+Les deux fonctions ( scale_x_continuous() et scale_y_continuous() ) sont utilisées que pour les variables numériques continues.
+
  **Exemple : **
-Ces deux fonctions ( scale_x_*() et scale_y_*() ) sont utilisées que pour les variables numériques continues :
 
 Exemple : personnaliser l’échelle de l’axe des x (`hage`) et des y (`pcexp`)
 
@@ -543,7 +626,53 @@ ggplot(wf_sample, aes(x = hage, y = pcexp)) +
 
 ```
 
+Dans ce graphique, les fonctions `scale_x_continuous()` et `scale_y_continuous()` sont utilisées pour **personnaliser les axes** :
+
+- `name` : définit le **titre de l’axe**, ici `"Âge du chef de ménage"` pour l’axe des x et `"Bien-être (pcexp)"` pour l’axe des y.
+
+- `breaks = seq(20, 80, by = 10)` : spécifie les **graduations** visibles sur l’axe des x, tous les 10 ans de 20 à 80.
+
+- `limits = c(...)` : fixe les **valeurs minimales et maximales** affichées sur chaque axe,  
+  ce qui permet de **zoomer** sur une plage spécifique des données.
+
+Les fonctions `scale_x_discrete()` et `scale_y_discrete()` s’appliquent lorsque l’axe correspond à une **variable discrète**  
+(qualitative, comme une catégorie ou un libellé).
+
+C’est notamment le cas de l’axe des x dans un **diagramme en barres** (`geom_bar()`),  
+où les barres représentent différentes **modalités d’une variable catégorielle** (ex : sexe, région, niveau d’éducation, etc.).
+
+Ces fonctions permettent de :
+
+- **Renommer les modalités** affichées sur l’axe,
+- **Réordonner** les catégories,
+- **Supprimer ou modifier** certaines étiquettes,
+- Ajuster l’affichage pour une meilleure lisibilité.
+
+```{r}
+ggplot(wf_sample, aes(x = hgender)) +
+  geom_bar(fill = "skyblue") +
+  scale_x_discrete(
+    name = "Sexe du chef de ménage",
+    labels = c("Masculin" = "Homme", "Féminin" = "Femme")
+  ) +
+  labs(title = "Répartition des chefs de ménage selon le sexe")
+```
+
 ### 4.6.3 scale_color_*() et scale_fill_*() – Travailler les couleurs
+
+Ces `scales` permettent, entre autres, de **modifier les palettes de couleurs** utilisées pour :
+
+- le **tracé des contours ou lignes** (`color`),
+- le **remplissage des objets** (`fill`), comme les barres ou les boîtes.
+
+Pour chaque fonction `scale_color_*()` présentée, il existe une **fonction équivalente `scale_fill_*()`**,  
+qui permet de faire la même chose sur l'attribut `fill`, généralement avec **les mêmes arguments**.
+
+Par exemple :
+
+- `scale_color_manual()` ->`scale_fill_manual()`
+- `scale_color_brewer()` ->`scale_fill_brewer()`
+- `scale_color_gradient()` ->`scale_fill_gradient()`
 
 #### 4.6.3.1 Variables quantitatives : scale_color_gradient()
 
@@ -553,7 +682,7 @@ sous forme de **dégradé de couleurs**.
 C’est très utile pour **explorer visuellement l’intensité, les tendances ou les variations** d’une variable dans un graphique.
 
 
- Quand l’utiliser ?
+Quand l’utiliser ?
 
 On l’utilise lorsque l’on souhaite que la **couleur d’un point, d’une ligne ou d’un objet graphique**  
 reflète la valeur d’une **variable continue**, par exemple :
@@ -581,6 +710,27 @@ ggplot(wf_sample, aes(x = dtot, y = pcexp, color = hage)) +
   )
 
 ```
+
+
+```{r}
+library(viridis)
+ggplot(wf_sample, aes(x = dtot, y = pcexp, color = hage)) +
+  geom_point(size = 2, alpha = 0.7) +
+  
+  # Appliquer un dégradé de bleu à rouge selon l'âge
+ scale_color_viridis("Age") +
+  
+  labs(
+    title = "Bien-être en fonction des dépenses, coloré par âge",
+    x = "Dépenses totales (dtot)",
+    y = "Bien-être (pcexp)",
+    color = "Âge"
+  )
+```
+
+L’extension viridis propose également trois autres palettes, magma, inferno et plasma, accessibles via l’argument option(""). 
+
+
 #### 4.6.3.2 Variables qualitatives : scale_color_manual() et scale_fill_manual()
 
 La fonction `scale_color_manual()` de `ggplot2` est utilisée pour **attribuer manuellement des couleurs fixes**  
@@ -608,8 +758,6 @@ ggplot(wf_sample, aes(x = hage, y = pcexp, color = hgender)) +
     color = "Sexe"
   )
 ```
-
-
 
 ## 4.7 Thèmes
 
@@ -663,6 +811,20 @@ theme_light() : version plus douce que theme_bw().
 
 theme_void() : supprime tous les éléments visuels – parfait pour des cartes.
 
+```{r}
+ggplot(wf_sample, aes(x = hage, y = pcexp, color = hgender)) +
+  geom_point(alpha = 0.7, size = 2) +
+  scale_color_manual(values = c("Masculin" = "blue", "Féminin" = "purple")) +
+  labs(
+    title = "Bien-être selon l'âge et le sexe",
+    x = "Âge du chef de ménage",
+    y = "Bien-être (pcexp)",
+    color = "Sexe"
+  ) +
+  theme_light() # Application du thème épuré
+
+```
+
 ### 4.7.2 Personnalisation fine avec theme()
 
 Pour aller plus loin, la fonction theme() permet de personnaliser précisément chaque composant graphique.
@@ -701,4 +863,7 @@ la couleur du texte des axes,
 la position de la légende (placée en bas).
 
 Chaque élément est personnalisable : marges, fond du panel, quadrillage, etc.
+
+
+
 

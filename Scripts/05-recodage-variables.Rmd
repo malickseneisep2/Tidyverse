@@ -1,15 +1,5 @@
----
-title: "Untitled"
-author: "Malick SENE"
-date: "`r Sys.Date()`"
-output:
-  pdf_document: default
-  html_document:
-    df_print: paged
-editor_options: 
-  markdown: 
-    wrap: 72
----
+# Chapitre 5 : Recoder des variables
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -22,8 +12,6 @@ library(forcats)
 library(ggplot2)
 library(dplyr)
 ```
-
-# 5. Recoder des variables
 
 ## 5.1 Recoder une variable qualitative
 

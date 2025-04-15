@@ -1,22 +1,12 @@
----
-title: "Manipulation de données avec dplyr"
-author: "Malick SENE"
-date: "`r Sys.Date()`"
-output:
-  pdf_document: default
-  html_document: default
----
-
-```{r warning= FALSE, message= FALSE}
-library(dplyr)#Chargement du package dplyr
-library(haven)
-wf <- read_dta("ehcvm_welfare_sen2021.dta")
-```
-
-#3. Manipulation de données avec dplyr
+# Chapitre 3 : Manipulation de données avec dplyr
 
 Une fois les données importées, l’étape suivante consiste à les préparer et les transformer en vue de l’analyse. Le package **`dplyr`**, composant central du **tidyverse**, fournit un ensemble d’outils puissants et cohérents pour manipuler efficacement les données contenues dans un `data.frame` ou un `tibble`. Il repose sur une syntaxe intuitive basée sur des **verbes** clairs (tels que `filter()`, `select()`, `mutate()`, etc.), qui permettent d’enchaîner les opérations de manière lisible et structurée. Conçu pour optimiser les performances, `dplyr` offre des fonctions généralement plus rapides que celles de base R, ce qui le rend particulièrement adapté au traitement de **données de grande dimension**. Il adopte également le paradigme des **données tidy**(abordé dans l'introduction), facilitant ainsi une approche rigoureuse, reproductible et fluide de la manipulation des données.
 
+```{r message = FALSE, warning= FALSE}
+library(haven)
+wf <- read_dta("ehcvm_welfare_sen2021.dta")
+
+```
 
 ## 3.1 Les fonctions de dplyr
 
@@ -26,7 +16,8 @@ La manipulation de données avec dplyr se fait en utilisant un nombre réduit de
 
 La fonction slice() permet de sélectionner des lignes spécifiques de votre jeu de données en fonction de leur position. C’est un peu comme zoomer sur une section particulière d’un tableau. On lui passe en parametre un chiffre ou un vecteur de chiffre.
 
-```{r}
+```{r warning = FALSE, message= FALSE}
+library(tidyverse)
 # Exemple : Sélectionner les 5 premières lignes de la base welfare 
 wf %>% slice(1:5)
 ```
@@ -376,7 +367,7 @@ base_combined_lig <- bind_rows(wf, menage)
 
 ## 3.4 Jointures
 
-Lorsque les données sont réparties dans plusieurs tableaux (ou dataframes), il est souvent nécessaire de les fusionner pour effectuer des analyses complètes. C’est le rôle des jointures (joins), qui permettent de réunir les tableaux en fonction d’une ou plusieurs clés communes (généralement un identifiant, comme hhid pour le ménage).Le package dplyr facilite cette opération grâce à des fonctions dédiées, à la fois puissantes et faciles à lire : inner_join(), left_join(), right_join() et full_join().
+Lorsque les données sont réparties dans plusieurs tableaux (ou dataframes), il est souvent nécessaire de les fusionner pour effectuer des analyses complètes. C’est le rôle des jointures (joins), qui permettent de réunir les tableaux en fonction d’une ou plusieurs clés communes (généralement un identifiant, comme hhid pour le ménage).Le package dplyr facilite cette opération grâce à des fonctions dédiées : inner_join(), left_join(), right_join() et full_join().
 
  **Principales fonctions de jointure**
  
@@ -407,13 +398,14 @@ Assure-toi que les variables sur lesquelles repose la jointure sont du même typ
 
  En résumé,une jointure réussie repose sur une préparation rigoureuse des données : clé commune fiable, codage cohérent, traitement des valeurs manquantes, suppression des doublons et cohérence des types. Ce n' est qu'après ce travail en amont que l' on peut baser a la fusion.
 
-**Exemples d’utilisation  des differentes jointures**:
- Jointure interne (inner join)
+**Exemples d’utilisation  des differentes jointures(les jointures ne sont pas exécutées, elles sont juste à titre indicatif)**:
+Jointure interne (inner join)
+
 ```{r eval=FALSE}
 # Jointure interne
-data_joined <- inner_join(welfare_18, wf, by = "hhid")
+data_joined <- inner_join(wf_18, wf_21, by = "hhid")
 ```
-Cette commande conserve uniquement les individus qui apparaissent à la fois dans les bases welfare_18 et wf, en les fusionnant selon l’identifiant hhid.
+Cette commande conserve uniquement les individus qui apparaissent à la fois dans les bases wf_18 et wf_21, en les fusionnant selon l’identifiant hhid.
 
 ```{r eval = FALSE}
 # Jointure gauche
