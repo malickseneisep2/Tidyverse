@@ -6,4 +6,4 @@ Ce repository contient un livre interactif généré avec [Bookdown](https://boo
 
 Vous pouvez consulter la version en ligne du livre via le lien suivant :
 
-[Voir le livre en ligne](https://dazzling-pie-5daea2.netlify.app/)
+[Voir le livre en ligne](https://dazzling-pie-5daea2.netlify.app/introduction-au-tidyverse)
