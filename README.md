@@ -6,4 +6,4 @@ Ce repository contient un livre interactif généré avec [Bookdown](https://boo
 
 Vous pouvez consulter la version en ligne du livre via le lien suivant :
 
-[Voir le livre en ligne](https://regal-nougat-8c012f.netlify.app/introduction-au-tidyverse)
+[Voir le livre en ligne](https://sparkling-begonia-00e10a.netlify.app/introduction-au-tidyverse)
